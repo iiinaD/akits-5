@@ -1,0 +1,42 @@
+syntax = "proto3";
+option go_package = "akits-5/grpc/proto";
+
+
+message BidMessage {
+  uint64 amount = 1;
+}
+
+message Reply {
+  string acknowledgement = 1;
+}
+
+message ResultResponse {
+  string outcome = 1;
+}
+
+message BidUpdateMessage {
+  uint64 amount = 1;
+  uint64 timeLeft = 2;
+  uint64 lamportTime = 3;
+}
+
+message JoinResponse {
+  bool success = 1;
+  uint64 time = 2;
+  repeated string ports = 3;
+}
+
+message JoinMessage {
+  string port = 1;
+}
+
+message Empty {}
+
+service AuctionService {
+  rpc Bid(BidMessage) returns (Reply);
+  rpc Result(Empty) returns (ResultResponse);
+  rpc UpdateBid(BidUpdateMessage) returns (Reply);
+  rpc CheckPulse(Empty) returns (Reply);
+  rpc AddNode(JoinMessage) returns (JoinMessage);
+  rpc Join(JoinMessage) returns (JoinResponse);
+}
