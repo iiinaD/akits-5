@@ -9,16 +9,22 @@ import (
 	proto "main/grpc"
 	"net"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 )
 
 type AuctionNode struct {
 	proto.UnimplementedAuctionServiceServer
 	port        string
-	lamportTime uint64
+	logicalTime uint64
 	clients     map[string]proto.AuctionServiceClient
 	highestBid  uint64
 	timeLeft    uint64
 }
+
+var mutuallyExclusiveUniversalLock sync.Mutex
 
 func main() {
 	clientPort := os.Args[1] //The port of this node
@@ -26,9 +32,8 @@ func main() {
 	node := &AuctionNode{
 		port:        clientPort,
 		clients:     make(map[string]proto.AuctionServiceClient),
-		lamportTime: 0,
+		logicalTime: 0,
 	}
-
 	go node.startServer()
 
 	if len(os.Args) > 2 {
@@ -55,8 +60,7 @@ func main() {
 			node.startClient(port)
 		}
 	}
-	go TakeInputs()
-
+	go node.TakeInputs()
 	prev := len(node.clients)
 	fmt.Printf("Connected nodes: %d\n", prev+1)
 	for {
@@ -70,12 +74,20 @@ func main() {
 	}
 }
 
-func TakeInputs() {
+func (s *AuctionNode) TakeInputs() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		text := scanner.Text()
-		if text == "Start auction" {
-			panic("Start auction is not implemented yet")
+		splitText := strings.Split(text, " ")
+		if splitText[0]+" "+splitText[1] == "Start auction" {
+			mutuallyExclusiveUniversalLock.Lock()
+			textTime, err := strconv.Atoi(splitText[2])
+			if err != nil {
+				panic(err)
+			}
+			s.timeLeft = uint64(textTime)
+			mutuallyExclusiveUniversalLock.Unlock()
+			go s.time()
 		}
 	}
 }
@@ -105,9 +117,9 @@ func (s *AuctionNode) startServer() { // start up a new server and listen on the
 	}
 }
 
-// Join Called from client, to make a request to join the network
+// Join Called from node, to make a request to join the network
 func (s *AuctionNode) Join(context context.Context, message *proto.JoinMessage) (*proto.JoinResponse, error) {
-	//Sends a
+	//Sends a.
 	var ports []string
 	for _, client := range s.clients {
 		res, err := client.AddNode(context, message)
@@ -139,23 +151,58 @@ func (s *AuctionNode) AddNode(context context.Context, message *proto.JoinMessag
 
 func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*proto.Reply, error) {
 	reply := proto.Reply{}
-
+	mutuallyExclusiveUniversalLock.Lock()
 	if s.highestBid < message.Amount {
 		s.highestBid = message.Amount
+		s.logicalTime++
+		for _, client := range s.clients {
+			message := proto.BidUpdateMessage{
+				Amount:      s.highestBid,
+				TimeLeft:    s.timeLeft,
+				LogicalTime: s.logicalTime,
+			}
+			_, err := client.UpdateBid(context, &message)
+			if err != nil {
+				return nil, err
+			}
+		}
 		reply.Acknowledgement = fmt.Sprintf("You have the new highest bid at: %d", s.highestBid)
 	} else {
 		reply.Acknowledgement = "Your bid is too low"
 	}
-
+	mutuallyExclusiveUniversalLock.Unlock()
 	return &reply, nil
 }
 
 func (s *AuctionNode) Result(context context.Context, message *proto.Empty) (*proto.ResultResponse, error) {
 	response := &proto.ResultResponse{}
+	mutuallyExclusiveUniversalLock.Lock()
 	if s.timeLeft <= 0 {
 		response.Outcome = fmt.Sprintf("Auction sold for: %d", s.highestBid)
 	} else {
 		response.Outcome = fmt.Sprintf("Highest bid is: %d", s.highestBid)
 	}
+	mutuallyExclusiveUniversalLock.Unlock()
 	return response, nil
+}
+
+func (s *AuctionNode) UpdateBid(context context.Context, message *proto.BidUpdateMessage) (*proto.Reply, error) {
+	mutuallyExclusiveUniversalLock.Lock()
+	s.highestBid = message.Amount
+	s.timeLeft = message.TimeLeft
+	s.logicalTime = message.LogicalTime
+	mutuallyExclusiveUniversalLock.Unlock()
+
+	reply := proto.Reply{Acknowledgement: "OK"}
+	return &reply, nil
+}
+
+func (s *AuctionNode) time() {
+	for s.timeLeft > 0 {
+		mutuallyExclusiveUniversalLock.Lock()
+		s.timeLeft -= 1
+		fmt.Printf("Time left: %d\n", s.timeLeft)
+		mutuallyExclusiveUniversalLock.Unlock()
+		time.Sleep(1000 * time.Millisecond)
+	}
 }

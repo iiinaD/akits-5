@@ -16,13 +16,11 @@ var client proto.AuctionServiceClient
 
 func main() {
 
-	port := os.Args[1]
-	startUser(&client, port)
+	//port := os.Args[1]
+	startUser(&client, "5050")
 
 	go TakeUserInput()
-	for {
-
-	}
+	select {}
 }
 
 func startUser(client *proto.AuctionServiceClient, port string) { // start up a new client for the node to send information through the given port
@@ -31,6 +29,8 @@ func startUser(client *proto.AuctionServiceClient, port string) { // start up a 
 		panic(err)
 	}
 	*client = proto.NewAuctionServiceClient(conn)
+	fmt.Println("Connected to auction.")
+	fmt.Println("Type \"bid <amount>\" to bid or \"result\" to see the current highest bid or the result of the auction.")
 }
 
 func TakeUserInput() {
@@ -38,19 +38,30 @@ func TakeUserInput() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		splitText := strings.Split(text, " ")
-		if splitText[0] != "Bid" {
-			continue
+		if strings.ToLower(splitText[0]) == "bid" {
+			bidAmount, err := strconv.Atoi(splitText[1])
+			if err != nil {
+				panic(err)
+			}
+			response, err := CreateBid(uint64(bidAmount))
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(response.Acknowledgement)
+		} else if strings.ToLower(splitText[0]) == "result" {
+			response, err := GetResult()
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(response.Outcome)
+		} else {
+			fmt.Println("Command not recognized. Try again!")
 		}
-		bidAmount, err := strconv.Atoi(splitText[1])
-		if err != nil {
-			panic(err)
-		}
-		response, err := CreateBid(uint64(bidAmount))
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(response.Acknowledgement)
 	}
+}
+
+func GetResult() (*proto.ResultResponse, error) {
+	return client.Result(context.Background(), &proto.Empty{})
 }
 
 func CreateBid(bidamount uint64) (*proto.Reply, error) {
