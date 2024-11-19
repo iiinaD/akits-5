@@ -18,9 +18,10 @@ func main() {
 
 	//port := os.Args[1]
 	startUser(&client, "5050")
-
+	
 	go TakeUserInput()
-	select {}
+	for {
+	}
 }
 
 func startUser(client *proto.AuctionServiceClient, port string) { // start up a new client for the node to send information through the given port

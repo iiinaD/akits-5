@@ -27,7 +27,12 @@ type AuctionNode struct {
 var mutuallyExclusiveUniversalLock sync.Mutex
 
 func main() {
-	clientPort := os.Args[1] //The port of this node
+	var clientPort string
+	if len(os.Args) < 2 {
+		clientPort = "5050"
+	} else {
+		clientPort = os.Args[1] //The port of this node
+	}
 
 	node := &AuctionNode{
 		port:        clientPort,
@@ -36,16 +41,14 @@ func main() {
 	}
 	go node.startServer()
 
-	if len(os.Args) > 2 {
-		joinOnPort := os.Args[2] //The port for this node to join the network on
-
-		node.startClient(joinOnPort)
+	if len(os.Args) > 1 {
+		node.startClient("5050")
 
 		message := proto.JoinMessage{
 			Port: clientPort,
 		}
 
-		response, err := node.clients[joinOnPort].Join(context.Background(), &message) //Trying to join using the first node
+		response, err := node.clients["5050"].Join(context.Background(), &message) //Trying to join using the first node
 
 		if err != nil {
 			panic(err)
@@ -79,7 +82,7 @@ func (s *AuctionNode) TakeInputs() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		splitText := strings.Split(text, " ")
-		if splitText[0]+" "+splitText[1] == "Start auction" {
+		if strings.ToLower(splitText[0]+" "+splitText[1]) == "start auction" {
 			mutuallyExclusiveUniversalLock.Lock()
 			textTime, err := strconv.Atoi(splitText[2])
 			if err != nil {
@@ -203,4 +206,89 @@ func (s *AuctionNode) time() {
 		fmt.Printf("Time left: %d\n", s.timeLeft)
 		time.Sleep(1000 * time.Millisecond)
 	}
+}
+
+func (s *AuctionNode) WatchLeaderPulse() {
+	for {
+		response, err := s.clients["5050"].CheckPulse(context.Background(), &proto.Empty{})
+		if err != nil {
+			s.StartElection()
+		}
+		if response.Acknowledgement != "OK" {
+			panic("got response but isn't OK.")
+		}
+		time.Sleep(2000 * time.Millisecond / 2)
+	}
+}
+
+func (s *AuctionNode) StartElection() {
+	minPortString := s.port
+	minPort, err := strconv.Atoi(minPortString)
+	if err != nil {
+		panic(err)
+	}
+	for port, _ := range s.clients {
+		portNumber, err := strconv.Atoi(port)
+		if err != nil {
+			panic(err)
+		}
+		if portNumber < minPort {
+			minPort = portNumber
+			minPortString = port
+		}
+	}
+	if minPortString == s.port {
+		_, err := s.RunElection(context.Background(), &proto.Empty{})
+		if err != nil {
+			return
+		}
+	} else {
+		_, err := s.clients[minPortString].RunElection(context.Background(), &proto.Empty{})
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (s *AuctionNode) RunElection(context context.Context, _ *proto.Empty) (*proto.Empty, error) {
+	minLogicalTime := s.logicalTime
+	minLogicalTimePort := s.port
+	for port, client := range s.clients {
+		timeMessage, err := client.GetLogicalTime(context, &proto.Empty{})
+		if err != nil {
+			return nil, err
+		}
+		if timeMessage.LogicalTime < minLogicalTime {
+			minLogicalTime = timeMessage.LogicalTime
+			minLogicalTimePort = port
+		}
+	}
+	electionResult := &proto.PortMessage{
+		Port: minLogicalTimePort,
+	}
+	for _, client := range s.clients {
+		_, err := client.MakeLeader(context, electionResult)
+		if err != nil {
+			return nil, err
+		}
+	}
+	_, err := s.MakeLeader(context, electionResult)
+	if err != nil {
+		return nil, err
+	}
+	return &proto.Empty{}, nil
+}
+
+func (s *AuctionNode) GetLogicalTime(context context.Context, message *proto.Empty) (*proto.TimeMessage, error) {
+	reply := &proto.TimeMessage{
+		LogicalTime: s.logicalTime,
+	}
+	return reply, nil
+}
+
+func (s *AuctionNode) CheckPulse(context context.Context, message *proto.Empty) (*proto.Reply, error) {
+	reply := &proto.Reply{
+		Acknowledgement: "OK",
+	}
+	return reply, nil
 }
