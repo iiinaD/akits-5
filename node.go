@@ -199,10 +199,8 @@ func (s *AuctionNode) UpdateBid(context context.Context, message *proto.BidUpdat
 
 func (s *AuctionNode) time() {
 	for s.timeLeft > 0 {
-		mutuallyExclusiveUniversalLock.Lock()
 		s.timeLeft -= 1
 		fmt.Printf("Time left: %d\n", s.timeLeft)
-		mutuallyExclusiveUniversalLock.Unlock()
 		time.Sleep(1000 * time.Millisecond)
 	}
 }
