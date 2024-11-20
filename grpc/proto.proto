@@ -31,7 +31,7 @@ message JoinMessage {
 }
 
 message TimeMessage {
-  uint64 logicalTime = 1;
+  uint64 time = 1;
 }
 
 message PortMessage {
@@ -48,7 +48,8 @@ service AuctionService {
   rpc AddNode(JoinMessage) returns (JoinMessage);
   rpc Join(JoinMessage) returns (JoinResponse);
   rpc GetLogicalTime(Empty) returns (TimeMessage);
-  rpc MakeLeader(PortMessage) returns (Empty);
+  rpc SetLeader(PortMessage) returns (Empty);
   rpc RunElection(Empty) returns (Empty);
   rpc RemoveNode(PortMessage) returns (Reply);
+  rpc StartAuction(TimeMessage) returns (Empty);
 }

@@ -26,9 +26,10 @@ const (
 	AuctionService_AddNode_FullMethodName        = "/AuctionService/AddNode"
 	AuctionService_Join_FullMethodName           = "/AuctionService/Join"
 	AuctionService_GetLogicalTime_FullMethodName = "/AuctionService/GetLogicalTime"
-	AuctionService_MakeLeader_FullMethodName     = "/AuctionService/MakeLeader"
+	AuctionService_SetLeader_FullMethodName      = "/AuctionService/SetLeader"
 	AuctionService_RunElection_FullMethodName    = "/AuctionService/RunElection"
 	AuctionService_RemoveNode_FullMethodName     = "/AuctionService/RemoveNode"
+	AuctionService_StartAuction_FullMethodName   = "/AuctionService/StartAuction"
 )
 
 // AuctionServiceClient is the client API for AuctionService service.
@@ -42,9 +43,10 @@ type AuctionServiceClient interface {
 	AddNode(ctx context.Context, in *JoinMessage, opts ...grpc.CallOption) (*JoinMessage, error)
 	Join(ctx context.Context, in *JoinMessage, opts ...grpc.CallOption) (*JoinResponse, error)
 	GetLogicalTime(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TimeMessage, error)
-	MakeLeader(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error)
+	SetLeader(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error)
 	RunElection(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	RemoveNode(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Reply, error)
+	StartAuction(ctx context.Context, in *TimeMessage, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type auctionServiceClient struct {
@@ -125,10 +127,10 @@ func (c *auctionServiceClient) GetLogicalTime(ctx context.Context, in *Empty, op
 	return out, nil
 }
 
-func (c *auctionServiceClient) MakeLeader(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error) {
+func (c *auctionServiceClient) SetLeader(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, AuctionService_MakeLeader_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AuctionService_SetLeader_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +157,16 @@ func (c *auctionServiceClient) RemoveNode(ctx context.Context, in *PortMessage, 
 	return out, nil
 }
 
+func (c *auctionServiceClient) StartAuction(ctx context.Context, in *TimeMessage, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, AuctionService_StartAuction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuctionServiceServer is the server API for AuctionService service.
 // All implementations must embed UnimplementedAuctionServiceServer
 // for forward compatibility.
@@ -166,9 +178,10 @@ type AuctionServiceServer interface {
 	AddNode(context.Context, *JoinMessage) (*JoinMessage, error)
 	Join(context.Context, *JoinMessage) (*JoinResponse, error)
 	GetLogicalTime(context.Context, *Empty) (*TimeMessage, error)
-	MakeLeader(context.Context, *PortMessage) (*Empty, error)
+	SetLeader(context.Context, *PortMessage) (*Empty, error)
 	RunElection(context.Context, *Empty) (*Empty, error)
 	RemoveNode(context.Context, *PortMessage) (*Reply, error)
+	StartAuction(context.Context, *TimeMessage) (*Empty, error)
 	mustEmbedUnimplementedAuctionServiceServer()
 }
 
@@ -200,14 +213,17 @@ func (UnimplementedAuctionServiceServer) Join(context.Context, *JoinMessage) (*J
 func (UnimplementedAuctionServiceServer) GetLogicalTime(context.Context, *Empty) (*TimeMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLogicalTime not implemented")
 }
-func (UnimplementedAuctionServiceServer) MakeLeader(context.Context, *PortMessage) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MakeLeader not implemented")
+func (UnimplementedAuctionServiceServer) SetLeader(context.Context, *PortMessage) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLeader not implemented")
 }
 func (UnimplementedAuctionServiceServer) RunElection(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunElection not implemented")
 }
 func (UnimplementedAuctionServiceServer) RemoveNode(context.Context, *PortMessage) (*Reply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveNode not implemented")
+}
+func (UnimplementedAuctionServiceServer) StartAuction(context.Context, *TimeMessage) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartAuction not implemented")
 }
 func (UnimplementedAuctionServiceServer) mustEmbedUnimplementedAuctionServiceServer() {}
 func (UnimplementedAuctionServiceServer) testEmbeddedByValue()                        {}
@@ -356,20 +372,20 @@ func _AuctionService_GetLogicalTime_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuctionService_MakeLeader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AuctionService_SetLeader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PortMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuctionServiceServer).MakeLeader(ctx, in)
+		return srv.(AuctionServiceServer).SetLeader(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuctionService_MakeLeader_FullMethodName,
+		FullMethod: AuctionService_SetLeader_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuctionServiceServer).MakeLeader(ctx, req.(*PortMessage))
+		return srv.(AuctionServiceServer).SetLeader(ctx, req.(*PortMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -410,6 +426,24 @@ func _AuctionService_RemoveNode_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuctionService_StartAuction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TimeMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuctionServiceServer).StartAuction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuctionService_StartAuction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuctionServiceServer).StartAuction(ctx, req.(*TimeMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuctionService_ServiceDesc is the grpc.ServiceDesc for AuctionService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -446,8 +480,8 @@ var AuctionService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuctionService_GetLogicalTime_Handler,
 		},
 		{
-			MethodName: "MakeLeader",
-			Handler:    _AuctionService_MakeLeader_Handler,
+			MethodName: "SetLeader",
+			Handler:    _AuctionService_SetLeader_Handler,
 		},
 		{
 			MethodName: "RunElection",
@@ -456,6 +490,10 @@ var AuctionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveNode",
 			Handler:    _AuctionService_RemoveNode_Handler,
+		},
+		{
+			MethodName: "StartAuction",
+			Handler:    _AuctionService_StartAuction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
