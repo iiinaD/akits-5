@@ -45,7 +45,7 @@ type AuctionServiceClient interface {
 	GetLogicalTime(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TimeMessage, error)
 	SetLeader(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error)
 	RunElection(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	RemoveNode(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Reply, error)
+	RemoveNode(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error)
 	StartAuction(ctx context.Context, in *TimeMessage, opts ...grpc.CallOption) (*Empty, error)
 }
 
@@ -147,9 +147,9 @@ func (c *auctionServiceClient) RunElection(ctx context.Context, in *Empty, opts 
 	return out, nil
 }
 
-func (c *auctionServiceClient) RemoveNode(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Reply, error) {
+func (c *auctionServiceClient) RemoveNode(ctx context.Context, in *PortMessage, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Reply)
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, AuctionService_RemoveNode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ type AuctionServiceServer interface {
 	GetLogicalTime(context.Context, *Empty) (*TimeMessage, error)
 	SetLeader(context.Context, *PortMessage) (*Empty, error)
 	RunElection(context.Context, *Empty) (*Empty, error)
-	RemoveNode(context.Context, *PortMessage) (*Reply, error)
+	RemoveNode(context.Context, *PortMessage) (*Empty, error)
 	StartAuction(context.Context, *TimeMessage) (*Empty, error)
 	mustEmbedUnimplementedAuctionServiceServer()
 }
@@ -219,7 +219,7 @@ func (UnimplementedAuctionServiceServer) SetLeader(context.Context, *PortMessage
 func (UnimplementedAuctionServiceServer) RunElection(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunElection not implemented")
 }
-func (UnimplementedAuctionServiceServer) RemoveNode(context.Context, *PortMessage) (*Reply, error) {
+func (UnimplementedAuctionServiceServer) RemoveNode(context.Context, *PortMessage) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveNode not implemented")
 }
 func (UnimplementedAuctionServiceServer) StartAuction(context.Context, *TimeMessage) (*Empty, error) {

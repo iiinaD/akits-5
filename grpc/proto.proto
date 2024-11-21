@@ -50,6 +50,6 @@ service AuctionService {
   rpc GetLogicalTime(Empty) returns (TimeMessage);
   rpc SetLeader(PortMessage) returns (Empty);
   rpc RunElection(Empty) returns (Empty);
-  rpc RemoveNode(PortMessage) returns (Reply);
+  rpc RemoveNode(PortMessage) returns (Empty);
   rpc StartAuction(TimeMessage) returns (Empty);
 }

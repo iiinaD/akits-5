@@ -90,11 +90,11 @@ func (s *AuctionNode) TakeInputs() {
 		text := scanner.Text()
 		splitText := strings.Split(text, " ")
 		if strings.ToLower(splitText[0]+" "+splitText[1]) == "start auction" {
-			mutuallyExclusiveUniversalLock.Lock()
 			textTime, err := strconv.Atoi(splitText[2])
 			if err != nil {
 				panic(err)
 			}
+			mutuallyExclusiveUniversalLock.Lock()
 			s.timeLeft = uint64(textTime)
 			go s.time()
 			mutuallyExclusiveUniversalLock.Unlock()
@@ -140,10 +140,11 @@ func (s *AuctionNode) startServer() { // start up a new server and listen on the
 func (s *AuctionNode) Join(context context.Context, message *proto.JoinMessage) (*proto.JoinResponse, error) {
 	//Sends a.
 	var ports []string
-	for _, client := range s.clients {
+	for port, client := range s.clients {
 		res, err := client.AddNode(context, message)
 		if err != nil {
-			return nil, err
+			s.DeleteNode(port)
+			continue
 		}
 		ports = append(ports, res.Port)
 	}
@@ -185,7 +186,7 @@ func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*
 			}
 			_, err := client.UpdateBid(context, &message)
 			if err != nil {
-				return nil, err
+				s.DeleteNode(port)
 			}
 		}
 		reply.Acknowledgement = fmt.Sprintf("You have the new highest bid at: %d", s.highestBid)
@@ -194,6 +195,29 @@ func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*
 	}
 	mutuallyExclusiveUniversalLock.Unlock()
 	return &reply, nil
+}
+
+func (s *AuctionNode) DeleteNode(port string) {
+	message := proto.PortMessage{
+		Port: port,
+	}
+	delete(s.clients, port)
+	for clientPort, client := range s.clients {
+		if clientPort == "5050" {
+			continue
+		}
+		_, err := client.RemoveNode(context.Background(), &message)
+		if err != nil {
+			s.DeleteNode(clientPort)
+		}
+	}
+}
+
+func (s *AuctionNode) RemoveNode(ctx context.Context, message *proto.PortMessage) (*proto.Empty, error) {
+	mutuallyExclusiveUniversalLock.Lock()
+	delete(s.clients, message.Port)
+	mutuallyExclusiveUniversalLock.Unlock()
+	return &proto.Empty{}, nil
 }
 
 func (s *AuctionNode) Result(context context.Context, message *proto.Empty) (*proto.ResultResponse, error) {
