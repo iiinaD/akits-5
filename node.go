@@ -174,7 +174,10 @@ func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*
 	if s.highestBid < message.Amount {
 		s.highestBid = message.Amount
 		s.logicalTime++
-		for _, client := range s.clients {
+		for port, client := range s.clients {
+			if port == s.port {
+				continue
+			}
 			message := proto.BidUpdateMessage{
 				Amount:      s.highestBid,
 				TimeLeft:    s.timeLeft,
