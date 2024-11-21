@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 )
 
 var client proto.AuctionServiceClient
@@ -45,11 +44,9 @@ func TakeUserInput() {
 			if err != nil {
 				panic(err)
 			}
-		createbid:
 			response, err := CreateBid(uint64(bidAmount))
 			if err != nil {
-				time.Sleep(250 * time.Millisecond)
-				goto createbid
+				fmt.Println("An error happened trying to make the bid")
 			}
 			fmt.Println(response.Acknowledgement)
 		} else if strings.ToLower(splitText[0]) == "result" {

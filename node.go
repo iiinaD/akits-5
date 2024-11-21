@@ -89,7 +89,9 @@ func (s *AuctionNode) TakeInputs() {
 	for scanner.Scan() {
 		text := scanner.Text()
 		splitText := strings.Split(text, " ")
-		if strings.ToLower(splitText[0]+" "+splitText[1]) == "start auction" {
+		if len(splitText) < 3 {
+			fmt.Println("Cannot recognize command...")
+		} else if strings.ToLower(splitText[0]+" "+splitText[1]) == "start auction" {
 			textTime, err := strconv.Atoi(splitText[2])
 			if err != nil {
 				panic(err)
@@ -107,6 +109,8 @@ func (s *AuctionNode) TakeInputs() {
 					panic(err)
 				}
 			}
+		} else {
+			fmt.Println("Cannot recognize command...")
 		}
 	}
 }
@@ -172,7 +176,9 @@ func (s *AuctionNode) AddNode(context context.Context, message *proto.JoinMessag
 func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*proto.Reply, error) {
 	reply := proto.Reply{}
 	mutuallyExclusiveUniversalLock.Lock()
-	if s.highestBid < message.Amount {
+	if s.timeLeft <= 0 {
+		reply.Acknowledgement = "No auction is currently running"
+	} else if s.highestBid < message.Amount {
 		s.highestBid = message.Amount
 		s.logicalTime++
 		for port, client := range s.clients {
@@ -191,7 +197,7 @@ func (s *AuctionNode) Bid(context context.Context, message *proto.BidMessage) (*
 		}
 		reply.Acknowledgement = fmt.Sprintf("You have the new highest bid at: %d", s.highestBid)
 	} else {
-		reply.Acknowledgement = "Your bid is too low"
+		reply.Acknowledgement = fmt.Sprintf("Your bid is too low. The highest bid right now is: %d\n", s.highestBid)
 	}
 	mutuallyExclusiveUniversalLock.Unlock()
 	return &reply, nil
@@ -251,6 +257,7 @@ func (s *AuctionNode) time() {
 		}
 		time.Sleep(1000 * time.Millisecond)
 	}
+	fmt.Printf("The winner of the auction bid: %d\n", s.highestBid)
 }
 
 func (s *AuctionNode) WatchLeaderPulse() {
@@ -263,8 +270,6 @@ func (s *AuctionNode) WatchLeaderPulse() {
 		}
 		if response.Acknowledgement != "OK" {
 			panic("got response but isn't OK.")
-		} else {
-			fmt.Println("Got OK from leader")
 		}
 		time.Sleep(2000 * time.Millisecond / 2)
 	}
