@@ -1,0 +1,175 @@
+# Start leader node:
+Connected nodes: 1
+Created listener
+Now listening on port 5050
+Connected nodes: 2
+Connected nodes: 3
+start auction 120
+Time left: 119
+Time left: 118
+Time left: 117
+Time left: 116
+Time left: 115
+Time left: 114
+Time left: 113
+Time left: 112
+Time left: 111
+^Csignal: interrupt
+
+# Second node:
+Created listener
+Now listening on port 5051
+Connected nodes: 2
+Connected nodes: 3
+Created listener
+Now listening on port 5050
+Time left: 110
+Time left: 109
+Time left: 108
+Time left: 107
+Time left: 106
+Time left: 105
+Time left: 104
+Time left: 103
+Time left: 102
+Time left: 101
+Time left: 100
+Time left: 99
+Time left: 98
+Time left: 97
+Time left: 96
+Time left: 95
+Time left: 94
+Time left: 93
+Time left: 92
+Time left: 91
+Time left: 90
+Time left: 89
+Time left: 88
+Time left: 87
+Time left: 86
+Time left: 85
+Time left: 84
+Time left: 83
+Time left: 82
+Time left: 81
+Time left: 80
+Time left: 79
+Time left: 78
+Time left: 77
+Time left: 76
+Time left: 75
+Time left: 74
+Time left: 73
+Time left: 72
+Time left: 71
+Time left: 70
+Time left: 69
+Time left: 68
+Time left: 67
+Time left: 66
+Time left: 65
+Time left: 64
+Time left: 63
+Time left: 62
+Time left: 61
+Time left: 60
+Time left: 59
+Time left: 58
+Time left: 57
+Time left: 56
+Time left: 55
+Time left: 54
+Time left: 53
+Time left: 52
+Time left: 51
+Time left: 50
+Time left: 49
+Time left: 48
+Time left: 47
+Time left: 46
+Time left: 45
+Time left: 44
+Time left: 43
+Time left: 42
+Time left: 41
+Time left: 40
+Time left: 39
+Time left: 38
+Time left: 37
+Time left: 36
+Time left: 35
+Time left: 34
+Time left: 33
+Time left: 32
+Time left: 31
+Time left: 30
+Time left: 29
+Time left: 28
+Time left: 27
+Time left: 26
+Time left: 25
+Time left: 24
+Time left: 23
+Time left: 22
+Time left: 21
+Time left: 20
+Time left: 19
+Time left: 18
+Time left: 17
+Time left: 16
+Time left: 15
+Time left: 14
+Time left: 13
+Time left: 12
+Time left: 11
+Time left: 10
+Time left: 9
+Time left: 8
+Time left: 7
+Time left: 6
+Time left: 5
+Time left: 4
+Time left: 3
+Time left: 2
+Time left: 1
+Time left: 0
+The winner of the auction bid: 130
+
+# Third node:
+reated listener
+Now listening on port 5052
+Connected nodes: 3
+2024/11/25 16:49:08 Node on port: 5052 detected a leader crash
+2024/11/25 16:49:08 Node on port: 5052 started an election
+2024/11/25 16:49:08 Node previously on port: 5051 is the new leader.
+Connected nodes: 2
+2024/11/25 16:49:08 Node on port: 5052 detected a leader crash
+2024/11/25 16:49:08 Node on port: 5052 started an election
+The winner of the auction bid: 130
+
+# First client:
+Connected to auction.
+Type "bid <amount>" to bid or "result" to see the current highest bid or the result of the auction.
+bid 120
+You have the new highest bid at: 120
+## LEADER CRASH
+result
+2024/11/25 16:49:39 Highest bid is: 130
+result
+2024/11/25 16:51:04 Auction sold for: 130
+
+# Second client:
+Connected to auction.
+Type "bid <amount>" to bid or "result" to see the current highest bid or the result of the auction.
+result
+2024/11/25 16:49:18 Highest bid is: 120
+## LEADER CRASH
+bid 110
+Your bid is too low. The highest bid right now is: 120
+
+bid 130
+You have the new highest bid at: 130
+result
+2024/11/25 16:52:14 Auction sold for: 130
+

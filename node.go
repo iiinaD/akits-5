@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
 	proto "main/grpc"
 	"net"
 	"os"
@@ -264,7 +265,7 @@ func (s *AuctionNode) WatchLeaderPulse() {
 	for s.port != "5050" {
 		response, err := s.clients["5050"].CheckPulse(context.Background(), &proto.Empty{})
 		if err != nil {
-			fmt.Printf("Node on port: %s detected a leader crash\n", s.port)
+			log.Printf("Node on port: %s detected a leader crash\n", s.port)
 			s.StartElection()
 			return
 		}
@@ -276,7 +277,7 @@ func (s *AuctionNode) WatchLeaderPulse() {
 }
 
 func (s *AuctionNode) StartElection() {
-	fmt.Printf("Node on port: %s started an election\n", s.port)
+	log.Printf("Node on port: %s started an election\n", s.port)
 	electionLock.Lock()
 	if !electionRunning {
 		_, err := s.clients["5050"].CheckPulse(context.Background(), &proto.Empty{})
@@ -310,7 +311,7 @@ func (s *AuctionNode) StartElection() {
 		}
 	}
 	if minPortString == s.port {
-		fmt.Printf("Node on port: %s is running the election\n", s.port)
+		log.Printf("Node on port: %s is running the election\n", s.port)
 		_, err := s.RunElection(context.Background(), &proto.Empty{})
 		if err != nil {
 			return
@@ -364,7 +365,7 @@ func (s *AuctionNode) SetLeader(context context.Context, message *proto.PortMess
 		s.port = "5050"
 		go s.startServer()
 	} else {
-		fmt.Printf("Node previously on port: %s is the new leader.\n", port)
+		log.Printf("Node previously on port: %s is the new leader.\n", port)
 		delete(s.clients, port)
 		go s.WatchLeaderPulse()
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"log"
 	proto "main/grpc"
 	"os"
 	"strconv"
@@ -54,7 +55,7 @@ func TakeUserInput() {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println(response.Outcome)
+			log.Println(response.Outcome)
 		} else {
 			fmt.Println("Command not recognized. Try again!")
 		}
